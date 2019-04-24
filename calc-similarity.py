@@ -1,19 +1,19 @@
 from glob import glob
 import sys
 import numpy as np
-from scipy.misc import imread, imsave, imresize
-from PIL import Image, ImageDraw, ImageFont
-#from imageio import imread
-#from skimage.transform import resize
+import cv2
+# from PIL import Image, ImageDraw, ImageFont
 #import matplotlib.pyplot as plt
 
 def load_img(path):
-    img = imread(path, flatten = True).astype(np.int) # flatten into grayscale image
-    return img
+    img = cv2.imread(path, cv2.IMREAD_GRAYSCALE)
+    return np.array(img).astype(np.int)
+
+def save_img(path, img):
+    return cv2.imwrite(path, img)
 
 def resize_img(img, size):
-    resized_img = imresize(img, size)
-    return resized_img
+    return cv2.resize(img, dsize=size, interpolation=cv2.INTER_LINEAR)
 
 def normalize_img(img):
     probmap = img/255;
@@ -24,7 +24,15 @@ def binarize_probmap(probmap, threshold=0.5):
     b_probmap[probmap>threshold] = 1
     return b_probmap
 
-def similarity_score(probmapPred, probmapTarget, method="dice"):
+def calcscore(imgPred, imgTarget, method="dice", threshold=threshold):
+    # normalize imgs into probability maps
+    probmapPred = normalize_img(imgPred)
+    probmapTarget = normalize_img(imgTarget)
+
+    # binarize probmap
+    probmapPred = binarize_probmap(probmapPred, threshold=threshold)
+    probmapTarget = binarize_probmap(probmapTarget, threshold=threshold)
+
     # select between Dice score and IOU
     TP = np.sum(probmapPred&probmapTarget)
     FP = np.sum((probmapPred^probmapTarget)&probmapPred)
@@ -60,36 +68,28 @@ else
 ## Calculate score of image pairs
 list_score = [] # list of scores
 
-for (i, pred_dir, target_dir) in zip(range(numpairs), pred_files, target_files):
+for i, (pred_dir, target_dir) in enumerate(pred_files, target_files):
 
     # load image
     pred_img = load_img(pred_dir)
     target_img = load_img(target_dir)
 
     # resize imgs to 256x256 pixels
-    pred_img_256 = resize_img(pred_img, [256, 256])
-    target_img_256 = resize_img(target_img, [256, 256])
-
-    # normalize imgs into probability maps
-    pred_probmap = normalize_img(pred_img_256)
-    target_probmap = normalize_img(target_img_256)
-
-    # binarize probmap
-    bin_pred_probmap = binarize_probmap(pred_probmap, threshold=0.5)
-    bin_target_probmap = binarize_probmap(target_probmap, threshold=0.5)
+    pred_img = resize_img(pred_img, [256, 256])
+    target_img = resize_img(target_img, [256, 256])
 
     # calculate dice score
-    score = similarity_score(bin_pred_probmap, bin_target_probmap, method=args.method)
+    score = calcscore(pred_img, target_img, method=args.method, threshold=0.5)
     print("#%d score: %.4f" % (i+1, score))
     list_score.append(score)
 
     # save plot to PNG
     if args.saveplot is True
-        plot = 0.5*bin_pred_probmap + 0.5*bin_target_probmap
+        plot = 0.5*pred_img + 0.5*target_img
         # draw = ImageDraw.Draw(plot)
         # draw.text(xy=(0,0), text=str(score), fill=256)
         # plot.show()
-        imsave(str(i)+".png", plot)
+        save_img(str(i)+".png", plot)
 
 # print average score
 print("avg score: %0.4f" % np.average(list_score))
