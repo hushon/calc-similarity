@@ -1,4 +1,5 @@
 from glob import glob
+import sys
 import numpy as np
 from scipy.misc import imread, imsave, imresize
 from PIL import Image, ImageDraw, ImageFont
@@ -33,9 +34,8 @@ def similarity_score(probmapPred, probmapTarget, method="dice"):
 	elif method is "dice": 
 		score = 2*TP / (2*TP + FP + FN)
 	else:
-		print("[!] undefined type of scoring method")
+		sys.exit("[!] undefined type of scoring method.")
 		score = None
-
 	return score
 
 # parse command line arguments
@@ -45,14 +45,22 @@ parser.add_argument('--saveplot', dest='saveplot', default=True, help='save plot
 parser.add_argument('--savecsv', dest='savecsv', default=True, help='save csv file')
 args = parser.parse_args()
 
+## Load images
 # specify image directory
 pred_files = glob("./pred/*.png")
 target_files = glob("./target/*.png")
 
-idx = range(len(pred_files)) # number of pairs
-list_score = [] # save scores of each pair
+# check if same number of files are found
+if len(pred_files)==len(target_files):
+	numpairs = len(pred_files) # number of pairs
+	print("[*] found %d image pairs." % numpairs)
+else
+	sys.exit("[!] number of files do not match.")
 
-for (i, pred_dir, target_dir) in zip(idx, pred_files, target_files):
+## Calculate score of image pairs
+list_score = [] # list of scores
+
+for (i, pred_dir, target_dir) in zip(range(numpairs), pred_files, target_files):
 
 	# load image
 	pred_img = load_img(pred_dir)
