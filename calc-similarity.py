@@ -24,7 +24,12 @@ def binarize_probmap(probmap, threshold=0.5):
     b_probmap[probmap>threshold] = 1
     return b_probmap
 
-def calcscore(imgPred, imgTarget, method="dice", threshold=threshold):
+def calcscore(imgPred, imgTarget, threshold=threshold, method="dice"):
+    ## function takes two images and returns a similarity score
+    ## shapes of input images must be identical
+    ## threshold is used to binarize image to binary maps
+    ## method specifies which formula to evaluate similarity
+
     # normalize imgs into probability maps
     probmapPred = normalize_img(imgPred)
     probmapTarget = normalize_img(imgTarget)
@@ -33,18 +38,17 @@ def calcscore(imgPred, imgTarget, method="dice", threshold=threshold):
     probmapPred = binarize_probmap(probmapPred, threshold=threshold)
     probmapTarget = binarize_probmap(probmapTarget, threshold=threshold)
 
-    # select between Dice score and IOU
+    # calculate similarity score
     TP = np.sum(probmapPred&probmapTarget)
     FP = np.sum((probmapPred^probmapTarget)&probmapPred)
     FN = np.sum((probmapPred^probmapTarget)&(~probmapPred))
     if method is "iou": 
-        score = TP / (TP + FP + FN)
+        return TP / (TP + FP + FN)
     elif method is "dice": 
-        score = 2*TP / (2*TP + FP + FN)
+        return 2*TP / (2*TP + FP + FN)
     else:
         sys.exit("[!] undefined type of scoring method.")
-        score = None
-    return score
+        return None
 
 # parse command line arguments
 parser = argparse.ArgumentParser(description='')
@@ -79,7 +83,7 @@ for i, (pred_dir, target_dir) in enumerate(pred_files, target_files):
     target_img = resize_img(target_img, [256, 256])
 
     # calculate dice score
-    score = calcscore(pred_img, target_img, method=args.method, threshold=0.5)
+    score = calcscore(pred_img, target_img, threshold=0.5, method=args.method)
     print("#%d score: %.4f" % (i+1, score))
     list_score.append(score)
 
