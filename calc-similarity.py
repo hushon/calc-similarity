@@ -16,6 +16,7 @@ def resize_img(img, size):
     return cv2.resize(img, dsize=size, interpolation=cv2.INTER_LINEAR)
 
 def normalize_img(img):
+    img = np.array(img).astype(np.float)
     probmap = img/255;
     return probmap
 
