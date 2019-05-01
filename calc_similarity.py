@@ -1,3 +1,4 @@
+import argparse
 from glob import glob
 import sys
 import numpy as np
@@ -25,7 +26,7 @@ def binarize_probmap(probmap, threshold=0.5):
     b_probmap[probmap>threshold] = 1
     return b_probmap
 
-def calcscore(imgPred, imgTarget, threshold=threshold, method="dice"):
+def calcscore(imgPred, imgTarget, threshold=0.5, method="dice"):
     ## function takes two images and returns a similarity score
     ## shapes of input images must be identical
     ## threshold is used to binarize image to binary maps
@@ -67,7 +68,7 @@ target_files = glob("./target/*.png")
 if len(pred_files)==len(target_files):
 	numpairs = len(pred_files) # number of pairs
 	print("[*] found %d image pairs." % numpairs)
-else
+else:
 	sys.exit("[!] number of files do not match.")
 
 ## Calculate score of image pairs
@@ -89,7 +90,7 @@ for i, (pred_dir, target_dir) in enumerate(pred_files, target_files):
     list_score.append(score)
 
     # save plot to PNG
-    if args.saveplot is True
+    if args.saveplot is True:
         plot = 0.5*pred_img + 0.5*target_img
         # draw = ImageDraw.Draw(plot)
         # draw.text(xy=(0,0), text=str(score), fill=256)
@@ -100,5 +101,5 @@ for i, (pred_dir, target_dir) in enumerate(pred_files, target_files):
 print("avg score: %0.4f" % np.average(list_score))
 
 # save to CSV
-if args.savecsv is True
+if args.savecsv is True:
     np.savetxt("scores.csv", list_score, delimiter=",")
